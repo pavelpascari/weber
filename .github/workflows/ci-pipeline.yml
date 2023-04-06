@@ -44,6 +44,6 @@ jobs:
         version: "2023.1.2"
 
     - name: Scan for Vulnerabilities in Code
-      uses: Templum/govulncheck-action@v0.0.9
+      uses: Templum/govulncheck-action@v0.10.0
       with:
         fail-on-vuln: false
