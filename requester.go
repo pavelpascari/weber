@@ -143,6 +143,10 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 		writer.Flush()
 	}()
 
+	if err := writer.Write(cfg.outputCols); err != nil {
+		return fmt.Errorf("failed to write header row: %v", err)
+	}
+
 	for {
 		timeout := time.After(cfg.giveUpAfter)
 
@@ -157,7 +161,7 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 				}
 			}
 		case <-timeout:
-			log("Timeout. Giving up waiting...")
+			log("\nGiving up waiting...")
 			return nil
 		case <-ctx.Done():
 			log("context done...")
@@ -185,9 +189,7 @@ func getRecord(e evt, cfg config, log logF) []string {
 	if len(cfg.domains) > 0 {
 		u, err := url.Parse(e.Request.URL)
 		if err != nil {
-			if cfg.verbose && !cfg.quiet {
-				log("failed to parse url:", e.Request.URL)
-			}
+			log("failed to parse url:", e.Request.URL)
 			return nil
 		}
 

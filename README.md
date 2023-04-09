@@ -52,6 +52,25 @@ Examples:
       weber -X GET -H example.org -o output.csv -c "url,method,status,Cache-Control" https://example.com
 ```
 
+## Examples
+
+```bash
+$ weber -o google.csv -c Content-Type,Cache-Control https://google.com
+.................
+Giving up waiting...
+Flushing writer...
+Done.
+```
+
+```bash
+$ cat google.csv
+cat google.csv 
+Content-Type,Cache-Control
+text/html; charset=UTF-8,"private, max-age=0"
+...
+text/javascript; charset=UTF-8,"public, max-age=31536000"
+```
+
 ## Contributing
 
 Weber is an open source project and we welcome contributions from the community. If you would like to contribute, please open an issue or submit a pull request.
