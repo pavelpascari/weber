@@ -1,6 +1,8 @@
+<img src="weber.svg" width="48">
+
 # Weber - A Go Command Line Tool for Web Developers
 
-Weber is a command line interface (CLI) tool written in Go, designed to make web development hassle free by providing 
+Weber is a command line interface (CLI) tool written in Go, designed to make web development with a Chrome-based browser hassle free by providing 
 easy-to-use utilities that ensure you offer the best web experience to your users.
 
 ## Use Cases
