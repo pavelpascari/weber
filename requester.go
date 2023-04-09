@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -130,13 +131,18 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 		return fmt.Errorf("failed to run chromedp: %v", err)
 	}
 
-	file, err := os.OpenFile(cfg.outputPath, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
+	var dst io.Writer
+	if cfg.outputPath != "" {
+		dst, err := os.OpenFile(cfg.outputPath, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open file: %v", err)
+		}
+		defer dst.Close()
+	} else {
+		dst = os.Stdout
 	}
-	defer file.Close()
 
-	writer := csv.NewWriter(file)
+	writer := csv.NewWriter(dst)
 	defer func() {
 		log("Flushing writer...")
 		writer.Flush()

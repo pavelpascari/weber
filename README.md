@@ -30,7 +30,7 @@ Once you have installed Weber, you can use it to perform various tasks such as:
 
 ```bash
 $ weber -h
-Usage: weber -o output.csv [OPTIONS] <url>
+Usage: weber [OPTIONS] <url>
 
 Options:
   -X <method>   Comma-separated list of HTTP methods to watch for (GET, POST, OPTIONS, PUT, DELETE). Default behavior is to consider all methods.

@@ -30,7 +30,7 @@ var (
 	}
 )
 
-const usage = `Usage: weber -o output.csv [OPTIONS] <url>
+const usage = `Usage: weber [OPTIONS] <url>
 
 Options:
   -X <method>   Comma-separated list of HTTP methods to watch for (GET, POST, OPTIONS, PUT, DELETE). Default behavior is to consider all methods.
@@ -153,6 +153,7 @@ func flagsToConfig() (config, error) {
 	cfg := config{
 		url:         url,
 		giveUpAfter: 5 * time.Second,
+		outputPath:  *o,
 		outputCols:  []string{"url", "method", "status"},
 	}
 
@@ -177,12 +178,6 @@ func flagsToConfig() (config, error) {
 		if len(cols) > 0 {
 			cfg.outputCols = cols
 		}
-	}
-
-	if *o == "" {
-		return config{}, fmt.Errorf("missing required argument: -o")
-	} else {
-		cfg.outputPath = *o
 	}
 
 	if *v {
