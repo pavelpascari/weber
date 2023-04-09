@@ -1,23 +1,24 @@
-# go-starter
+# Weber - A Go Command Line Tool for Web Developers
 
-`go-starter` is a public golang starter repo template. 
-It is useful for getting started with a new project. 
+Weber is a command line interface (CLI) tool written in Go, designed to make web development hassle free by providing easy-to-use utilities that ensure you offer the best web experience to your users.
 
+## Installation
 
-## How to use
+To use Weber, you must first install it on your local machine. You can do this by running the following command in your terminal:
 
 ```bash
-gh repo create <name> \
-  --public \
-  --template https://github.com/pavelpascari/go-starter
+go get -u github.com/pavelpascari/weber
 ```
 
-## Features
+## Usage
 
-- [ ] GitHub Actions workflow for CI
-  - [x] run tests
-    - [ ] ...with coverage check
-  - [x] vulnerability scanning with SARIF report thanks to [@Templum](https://github.com/Templum)'s `Templum/govulncheck-action`
-  - [x] static check thanks to [@dominikh](https://github.com/dominikh)'s `dominikh/staticcheck-action`
-- [x] Dependabot security scanning for `go`, `github-actions`
+Once you have installed Weber, you can use it to perform various tasks such as:
+
+### 1. Checking resource caching
+
+Weber provides a command that enables you to check for resources that are not cached and were downloaded from a particular domain. To do this, run the following command:
+
+```bash
+weber check cache --domain example.com session.har
+```
 
