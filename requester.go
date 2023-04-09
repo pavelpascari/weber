@@ -79,8 +79,10 @@ func (p *Processor) loop() {
 				continue
 			}
 
-			pending = append(pending, evt{RequestID: e.RequestID, Request: e.Request, Response: req.Response})
-			delete(requests, e.RequestID)
+			if req.Response != nil {
+				pending = append(pending, evt{RequestID: e.RequestID, Request: e.Request, Response: req.Response})
+				delete(requests, e.RequestID)
+			}
 		case e := <-p.networkResponse:
 			req, ok := requests[e.RequestID]
 			if !ok {
@@ -88,9 +90,10 @@ func (p *Processor) loop() {
 				continue
 			}
 
-			pending = append(pending, evt{RequestID: e.RequestID, Request: req.Request, Response: e.Response})
-			delete(requests, e.RequestID)
-
+			if req.Request != nil {
+				pending = append(pending, evt{RequestID: e.RequestID, Request: req.Request, Response: e.Response})
+				delete(requests, e.RequestID)
+			}
 		case updates <- first:
 			pending = pending[1:]
 		}
@@ -220,16 +223,13 @@ func contains(arr []string, target string) bool {
 }
 
 var (
-	supportedRequestAttributeGetters = map[string]func(evt) string{
+	supportedGetters = map[string]func(evt) string{
 		"url": func(e evt) string {
 			return e.Request.URL
 		},
 		"method": func(e evt) string {
 			return e.Request.Method
 		},
-	}
-
-	supportedResponseHeaderGetters = map[string]func(evt) string{
 		"Content-Type": func(e evt) string {
 			return getHeaderValue(e.Response.Headers, "Content-Type")
 		},
@@ -239,9 +239,7 @@ var (
 		"Content-Length": func(e evt) string {
 			return getHeaderValue(e.Response.Headers, "Content-Length")
 		},
-	}
 
-	supportedResponseAttributeGetters = map[string]func(evt) string{
 		"status": func(e evt) string {
 			return strconv.FormatInt(e.Response.Status, 10)
 		},
@@ -249,17 +247,11 @@ var (
 )
 
 func getColValue(e evt, col string) string {
-
-	if getter, ok := supportedResponseHeaderGetters[col]; ok {
-		return getter(e)
-	}
-
-	if getter, ok := supportedRequestAttributeGetters[col]; ok {
-		return getter(e)
-	}
-
-	if getter, ok := supportedResponseAttributeGetters[col]; ok {
-		return getter(e)
+	if getter, ok := supportedGetters[col]; ok {
+		res := getter(e)
+		fmt.Println(col)
+		fmt.Println(res)
+		return res
 	}
 
 	return "---"
@@ -267,17 +259,8 @@ func getColValue(e evt, col string) string {
 
 func mergedSupportedCols() string {
 	cols := []string{}
-	for k := range supportedRequestAttributeGetters {
+	for k := range supportedGetters {
 		cols = append(cols, k)
 	}
-
-	for k := range supportedResponseAttributeGetters {
-		cols = append(cols, k)
-	}
-
-	for k := range supportedResponseHeaderGetters {
-		cols = append(cols, k)
-	}
-
 	return strings.Join(cols, ", ")
 }
