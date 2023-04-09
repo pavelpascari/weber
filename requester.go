@@ -126,7 +126,7 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 		network.Enable(),
 		chromedp.Navigate(url),
 	)
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		return fmt.Errorf("failed to run chromedp: %v", err)
 	}
 
@@ -164,7 +164,6 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 			log("\nGiving up waiting...")
 			return nil
 		case <-ctx.Done():
-			log("context done...")
 			return ctx.Err()
 		}
 	}

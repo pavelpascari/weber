@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 )
@@ -76,7 +77,7 @@ type config struct {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage)
+		fmt.Fprint(os.Stderr, usage)
 	}
 
 	cfg, err := flagsToConfig()
@@ -84,10 +85,22 @@ func main() {
 		usageAndExit(err.Error())
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	log := logger(cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	log := logger(cfg)
+	ctx, cancel = context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		log("\nInterrupted. Exiting...")
+		log("\nThe stored data may be incomplete...")
+		cancel()
+	}()
 
 	if err := WatchNetworkFor(ctx, cfg.url, cfg, log); err != nil {
 		errAndExit(err.Error())
