@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -218,8 +219,17 @@ func contains(arr []string, target string) bool {
 	return false
 }
 
-func getColValue(e evt, col string) string {
-	supportedResponseHeaderGetters := map[string]func(evt) string{
+var (
+	supportedRequestAttributeGetters = map[string]func(evt) string{
+		"url": func(e evt) string {
+			return e.Request.URL
+		},
+		"method": func(e evt) string {
+			return e.Request.Method
+		},
+	}
+
+	supportedResponseHeaderGetters = map[string]func(evt) string{
 		"Content-Type": func(e evt) string {
 			return getHeaderValue(e.Response.Headers, "Content-Type")
 		},
@@ -231,31 +241,43 @@ func getColValue(e evt, col string) string {
 		},
 	}
 
+	supportedResponseAttributeGetters = map[string]func(evt) string{
+		"status": func(e evt) string {
+			return strconv.FormatInt(e.Response.Status, 10)
+		},
+	}
+)
+
+func getColValue(e evt, col string) string {
+
 	if getter, ok := supportedResponseHeaderGetters[col]; ok {
 		return getter(e)
-	}
-
-	supportedRequestAttributeGetters := map[string]func(evt) string{
-		"method": func(e evt) string {
-			return e.Request.Method
-		},
-		"url": func(e evt) string {
-			return e.Request.URL
-		},
 	}
 
 	if getter, ok := supportedRequestAttributeGetters[col]; ok {
 		return getter(e)
 	}
 
-	supportedResponseAttributeGetters := map[string]func(evt) string{
-		"status": func(e evt) string {
-			return strconv.FormatInt(e.Response.Status, 10)
-		},
-	}
 	if getter, ok := supportedResponseAttributeGetters[col]; ok {
 		return getter(e)
 	}
 
 	return "---"
+}
+
+func mergedSupportedCols() string {
+	cols := []string{}
+	for k := range supportedRequestAttributeGetters {
+		cols = append(cols, k)
+	}
+
+	for k := range supportedResponseAttributeGetters {
+		cols = append(cols, k)
+	}
+
+	for k := range supportedResponseHeaderGetters {
+		cols = append(cols, k)
+	}
+
+	return strings.Join(cols, ", ")
 }
