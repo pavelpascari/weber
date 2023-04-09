@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      GO_VERSION: 1.19
+      GO_VERSION: '1.20.3'
 
     steps:
     - uses: actions/checkout@v3
@@ -31,6 +31,8 @@ jobs:
   static-checks:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      security-events: write
     steps:
     - uses: actions/checkout@v3
     - name: Set up Go
@@ -43,7 +45,8 @@ jobs:
       with:
         version: "2023.1.2"
 
+# TODO: Enable this once the action is fixed
     - name: Scan for Vulnerabilities in Code
-      uses: Templum/govulncheck-action@v0.0.9
+      uses: Templum/govulncheck-action@v0.10.0
       with:
-        fail-on-vuln: false
+        go-version: 1.20.3
