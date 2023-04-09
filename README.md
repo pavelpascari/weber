@@ -18,7 +18,9 @@ To use Weber, you must first install it on your local machine. You can do this b
 go get -u github.com/pavelpascari/weber
 ```
 
-`weber` relies on chrome headless to perform its tasks. You can install it by following the instructions [here](https://developers.google.com/web/updates/2017/04/headless-chrome).
+`weber` relies on Chrome browser to perform its tasks. You can install it by following the instructions [here](https://www.google.com/chrome/).
+
+`weber` relies on `github.com/chromedp/chromedp` to leverage Chrome DevTools Protocol.
 
 ## Usage
 
@@ -47,3 +49,7 @@ Examples:
       # Watch for GET requests on example.org and output the URL, request method, the status code, and cache-control header
       weber -X GET -H example.org -o output.csv -c "url,method,status,Cache-Control" https://example.com
 ```
+
+## Contributing
+
+Weber is an open source project and we welcome contributions from the community. If you would like to contribute, please open an issue or submit a pull request.
