@@ -135,8 +135,6 @@ func main() {
 		cfg.verbose = false
 	}
 
-	//url := "https://compass.pressekompass.net/compasses/braunschweigerzeitung/was-halten-sie-vom-leihrollerverbot-in-p-xH4vV5"
-
 	if err := WatchNetworkFor(ctx, url, cfg); err != nil {
 		if !cfg.quiet {
 			errAndExit(err.Error())
