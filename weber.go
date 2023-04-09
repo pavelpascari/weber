@@ -64,6 +64,9 @@ type config struct {
 	// domains is a list of domains to watch for
 	domains []string
 
+	// url is the URL we observe being loaded
+	url string
+
 	// outputPath is the path to the file where the output will be written
 	outputPath string
 	// outputCols is the list of columns to write to the output file
@@ -71,28 +74,70 @@ type config struct {
 }
 
 func main() {
-	supportedCols := mergedSupportedCols()
-
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, supportedCols)
+		fmt.Fprintf(os.Stderr, usage, mergedSupportedCols())
 	}
 
-	flag.Parse()
-	if flag.NArg() < 1 {
-		usageAndExit("")
-	}
-
-	// Make sure the host is provided
-	url := flag.Args()[0]
-	if url == "" {
-		usageAndExit("Missing required argument: url")
+	cfg, err := flagsToConfig()
+	if err != nil {
+		usageAndExit(err.Error())
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
+	log := logger(cfg)
+
+	if err := WatchNetworkFor(ctx, cfg.url, cfg, log); err != nil {
+		errAndExit(err.Error())
+	}
+
+	log("Done.")
+}
+
+type logF func(string, ...any)
+
+func logger(cfg config) logF {
+	return func(msg string, args ...any) {
+		if cfg.quiet {
+			return
+		}
+
+		fmt.Fprintf(os.Stderr, msg, args...)
+		fmt.Fprint(os.Stderr, "\n")
+	}
+}
+
+func usageAndExit(msg string) {
+	if msg != "" {
+		fmt.Fprint(os.Stderr, msg)
+		fmt.Fprint(os.Stderr, "\n\n")
+	}
+	flag.Usage()
+	fmt.Fprint(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func errAndExit(msg string) {
+	fmt.Fprint(os.Stderr, msg)
+	fmt.Fprint(os.Stderr, "\n")
+	os.Exit(1)
+}
+
+func flagsToConfig() (config, error) {
+	flag.Parse()
+	if flag.NArg() < 1 {
+		return config{}, fmt.Errorf("missing required argument: url")
+	}
+
+	// Make sure the host is provided
+	url := flag.Args()[0]
+	if url == "" {
+		return config{}, fmt.Errorf("provided url argument is empty")
+	}
+
 	cfg := config{
-		quiet:       true,
+		url:         url,
 		giveUpAfter: 5 * time.Second,
 		outputCols:  []string{"url", "method", "status"},
 	}
@@ -102,7 +147,7 @@ func main() {
 		if len(methods) > 0 {
 			for _, m := range methods {
 				if !contains(supportedMethods, m) {
-					usageAndExit(fmt.Sprintf("Unsupported HTTP method: %s", m))
+					return config{}, fmt.Errorf("unsupported HTTP method: %s", m)
 				}
 				cfg.methods = append(cfg.methods, m)
 			}
@@ -121,7 +166,7 @@ func main() {
 	}
 
 	if *o == "" {
-		usageAndExit("Missing required argument: -o")
+		return config{}, fmt.Errorf("missing required argument: -o")
 	} else {
 		cfg.outputPath = *o
 	}
@@ -135,30 +180,5 @@ func main() {
 		cfg.verbose = false
 	}
 
-	if err := WatchNetworkFor(ctx, url, cfg); err != nil {
-		if !cfg.quiet {
-			errAndExit(err.Error())
-		}
-		errAndExit("")
-	}
-
-	if !cfg.quiet {
-		fmt.Println("Done.")
-	}
-}
-
-func usageAndExit(msg string) {
-	if msg != "" {
-		fmt.Fprint(os.Stderr, msg)
-		fmt.Fprint(os.Stderr, "\n\n")
-	}
-	flag.Usage()
-	fmt.Fprint(os.Stderr, "\n")
-	os.Exit(1)
-}
-
-func errAndExit(msg string) {
-	fmt.Fprint(os.Stderr, msg)
-	fmt.Fprint(os.Stderr, "\n")
-	os.Exit(1)
+	return cfg, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -100,12 +99,12 @@ func (p *Processor) loop() {
 	}
 }
 
-func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
+func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) error {
 	// Create a new ChromeDP context
 	var opts []chromedp.ContextOption
 
 	if cfg.verbose {
-		opts = append(opts, chromedp.WithDebugf(log.Printf))
+		opts = append(opts, chromedp.WithDebugf(log))
 	}
 	ctx, cancel := chromedp.NewContext(ctx, opts...)
 	defer cancel()
@@ -140,10 +139,8 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
 
 	writer := csv.NewWriter(file)
 	defer func() {
+		log("Flushing writer...")
 		writer.Flush()
-		if !cfg.quiet {
-			fmt.Println("Flushing writer...")
-		}
 	}()
 
 	for {
@@ -152,24 +149,18 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
 		select {
 		case e := <-proc.out:
 			timeout = nil
-			if !cfg.quiet {
-				fmt.Print(".") // progress indicator
-			}
-			if record := getRecord(e, cfg); record != nil {
+			fmt.Print(".") // progress indicator
+
+			if record := getRecord(e, cfg, log); record != nil {
 				if err := writer.Write(record); err != nil {
 					return fmt.Errorf("failed to write record: %v", err)
 				}
 			}
 		case <-timeout:
-			if !cfg.quiet {
-				fmt.Println()
-				fmt.Println("Timeout. Giving up waiting...")
-			}
+			log("Timeout. Giving up waiting...")
 			return nil
 		case <-ctx.Done():
-			if !cfg.quiet {
-				fmt.Println("context done...")
-			}
+			log("context done...")
 			return ctx.Err()
 		}
 	}
@@ -184,7 +175,7 @@ func getHeaderValue(h network.Headers, key string) string {
 	return ""
 }
 
-func getRecord(e evt, cfg config) []string {
+func getRecord(e evt, cfg config, log logF) []string {
 	if len(cfg.methods) > 0 {
 		if !contains(cfg.methods, e.Request.Method) {
 			return nil
@@ -195,7 +186,7 @@ func getRecord(e evt, cfg config) []string {
 		u, err := url.Parse(e.Request.URL)
 		if err != nil {
 			if cfg.verbose && !cfg.quiet {
-				log.Println("failed to parse url:", e.Request.URL)
+				log("failed to parse url:", e.Request.URL)
 			}
 			return nil
 		}
@@ -249,8 +240,6 @@ var (
 func getColValue(e evt, col string) string {
 	if getter, ok := supportedGetters[col]; ok {
 		res := getter(e)
-		fmt.Println(col)
-		fmt.Println(res)
 		return res
 	}
 
