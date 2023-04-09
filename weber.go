@@ -74,7 +74,7 @@ func main() {
 	supportedCols := mergedSupportedCols()
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, fmt.Sprintf(usage, supportedCols))
+		fmt.Fprintf(os.Stderr, usage, supportedCols)
 	}
 
 	flag.Parse()
@@ -151,16 +151,16 @@ func main() {
 
 func usageAndExit(msg string) {
 	if msg != "" {
-		fmt.Fprintf(os.Stderr, msg)
-		fmt.Fprintf(os.Stderr, "\n\n")
+		fmt.Fprint(os.Stderr, msg)
+		fmt.Fprint(os.Stderr, "\n\n")
 	}
 	flag.Usage()
-	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprint(os.Stderr, "\n")
 	os.Exit(1)
 }
 
 func errAndExit(msg string) {
-	fmt.Fprintf(os.Stderr, msg)
-	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprint(os.Stderr, msg)
+	fmt.Fprint(os.Stderr, "\n")
 	os.Exit(1)
 }
