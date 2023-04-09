@@ -29,17 +29,18 @@ go get -u github.com/pavelpascari/weber
 Once you have installed Weber, you can use it to perform various tasks such as:
 
 ```bash
-$ weber                                                               
+$ weber -h
 Usage: weber -o output.csv [OPTIONS] <url>
 
 Options:
   -X <method>   Comma-separated list of HTTP methods to watch for (GET, POST, OPTIONS, PUT, DELETE). Default behavior is to consider all methods.
   -H <string>   Comma-separated list of hostname or IP address to watch for. Default behavior is to consider all hosts.
   -o <file>     Write the response to a file. CSV is the default and only supported format.
-  -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". Available columns are:
-                    status, url, method, Content-Type, Cache-Control, Content-Length
+  -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". 
+                                Available columns are any valid response header, plus: url, method, status.
   -v            Enable verbose logging to observe all browser events.
   -q            Disable all logging.
+  -h            Show this help message.
 
 Examples:
       # Watch for all requests to https://example.com
@@ -50,6 +51,25 @@ Examples:
 
       # Watch for GET requests on example.org and output the URL, request method, the status code, and cache-control header
       weber -X GET -H example.org -o output.csv -c "url,method,status,Cache-Control" https://example.com
+```
+
+## Examples
+
+```bash
+$ weber -o google.csv -c Content-Type,Cache-Control https://google.com
+.................
+Giving up waiting...
+Flushing writer...
+Done.
+```
+
+```bash
+$ cat google.csv
+cat google.csv 
+Content-Type,Cache-Control
+text/html; charset=UTF-8,"private, max-age=0"
+...
+text/javascript; charset=UTF-8,"public, max-age=31536000"
 ```
 
 ## Contributing

@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -100,12 +98,12 @@ func (p *Processor) loop() {
 	}
 }
 
-func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
+func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) error {
 	// Create a new ChromeDP context
 	var opts []chromedp.ContextOption
 
 	if cfg.verbose {
-		opts = append(opts, chromedp.WithDebugf(log.Printf))
+		opts = append(opts, chromedp.WithDebugf(log))
 	}
 	ctx, cancel := chromedp.NewContext(ctx, opts...)
 	defer cancel()
@@ -128,7 +126,7 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
 		network.Enable(),
 		chromedp.Navigate(url),
 	)
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		return fmt.Errorf("failed to run chromedp: %v", err)
 	}
 
@@ -140,11 +138,13 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
 
 	writer := csv.NewWriter(file)
 	defer func() {
+		log("Flushing writer...")
 		writer.Flush()
-		if !cfg.quiet {
-			fmt.Println("Flushing writer...")
-		}
 	}()
+
+	if err := writer.Write(cfg.outputCols); err != nil {
+		return fmt.Errorf("failed to write header row: %v", err)
+	}
 
 	for {
 		timeout := time.After(cfg.giveUpAfter)
@@ -155,21 +155,15 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config) error {
 			if !cfg.quiet {
 				fmt.Print(".") // progress indicator
 			}
-			if record := getRecord(e, cfg); record != nil {
+			if record := getRecord(e, cfg, log); record != nil {
 				if err := writer.Write(record); err != nil {
 					return fmt.Errorf("failed to write record: %v", err)
 				}
 			}
 		case <-timeout:
-			if !cfg.quiet {
-				fmt.Println()
-				fmt.Println("Timeout. Giving up waiting...")
-			}
+			log("\nGiving up waiting...")
 			return nil
 		case <-ctx.Done():
-			if !cfg.quiet {
-				fmt.Println("context done...")
-			}
 			return ctx.Err()
 		}
 	}
@@ -184,7 +178,7 @@ func getHeaderValue(h network.Headers, key string) string {
 	return ""
 }
 
-func getRecord(e evt, cfg config) []string {
+func getRecord(e evt, cfg config, log logF) []string {
 	if len(cfg.methods) > 0 {
 		if !contains(cfg.methods, e.Request.Method) {
 			return nil
@@ -194,9 +188,7 @@ func getRecord(e evt, cfg config) []string {
 	if len(cfg.domains) > 0 {
 		u, err := url.Parse(e.Request.URL)
 		if err != nil {
-			if cfg.verbose && !cfg.quiet {
-				log.Println("failed to parse url:", e.Request.URL)
-			}
+			log("failed to parse url:", e.Request.URL)
 			return nil
 		}
 
@@ -230,16 +222,6 @@ var (
 		"method": func(e evt) string {
 			return e.Request.Method
 		},
-		"Content-Type": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Content-Type")
-		},
-		"Cache-Control": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Cache-Control")
-		},
-		"Content-Length": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Content-Length")
-		},
-
 		"status": func(e evt) string {
 			return strconv.FormatInt(e.Response.Status, 10)
 		},
@@ -249,18 +231,8 @@ var (
 func getColValue(e evt, col string) string {
 	if getter, ok := supportedGetters[col]; ok {
 		res := getter(e)
-		fmt.Println(col)
-		fmt.Println(res)
 		return res
 	}
 
-	return "---"
-}
-
-func mergedSupportedCols() string {
-	cols := []string{}
-	for k := range supportedGetters {
-		cols = append(cols, k)
-	}
-	return strings.Join(cols, ", ")
+	return getHeaderValue(e.Response.Headers, http.CanonicalHeaderKey(col))
 }
