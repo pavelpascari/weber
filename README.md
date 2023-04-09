@@ -1,6 +1,14 @@
 # Weber - A Go Command Line Tool for Web Developers
 
-Weber is a command line interface (CLI) tool written in Go, designed to make web development hassle free by providing easy-to-use utilities that ensure you offer the best web experience to your users.
+Weber is a command line interface (CLI) tool written in Go, designed to make web development hassle free by providing 
+easy-to-use utilities that ensure you offer the best web experience to your users.
+
+## Use Cases
+1. **Cache-Control Header Analysis** -
+Weber can be used to analyze the `Cache-Control` header of a website. You can get a report of the resources your clients are loading to analyse at a glance.
+This is useful for web developers who want to ensure that their website is optimized for caching.
+2. 
+
 
 ## Installation
 
@@ -10,15 +18,32 @@ To use Weber, you must first install it on your local machine. You can do this b
 go get -u github.com/pavelpascari/weber
 ```
 
+`weber` relies on chrome headless to perform its tasks. You can install it by following the instructions [here](https://developers.google.com/web/updates/2017/04/headless-chrome).
+
 ## Usage
 
 Once you have installed Weber, you can use it to perform various tasks such as:
 
-### 1. Checking resource caching
-
-Weber provides a command that enables you to check for resources that are not cached and were downloaded from a particular domain. To do this, run the following command:
-
 ```bash
-weber check cache --domain example.com session.har
-```
+$ weber                                                               
+Usage: weber -o output.csv [OPTIONS] <url>
 
+Options:
+  -X <method>   Comma-separated list of HTTP methods to watch for (GET, POST, OPTIONS, PUT, DELETE). Default behavior is to consider all methods.
+  -H <string>   Comma-separated list of hostname or IP address to watch for. Default behavior is to consider all hosts.
+  -o <file>     Write the response to a file. CSV is the default and only supported format.
+  -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". Available columns are:
+                    status, url, method, Content-Type, Cache-Control, Content-Length
+  -v            Enable verbose logging to observe all browser events.
+  -q            Disable all logging.
+
+Examples:
+      # Watch for all requests to https://example.com
+      weber -o output.csv https://example.com
+
+      # Watch for all requests to https://example.com> and https://example.org
+      weber -H example.com,example.org -o output.csv https://example.com
+
+      # Watch for GET requests on example.org and output the URL, request method, the status code, and cache-control header
+      weber -X GET -H example.org -o output.csv -c "url,method,status,Cache-Control" https://example.com
+```
