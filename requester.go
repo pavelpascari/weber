@@ -153,8 +153,9 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 		select {
 		case e := <-proc.out:
 			timeout = nil
-			fmt.Print(".") // progress indicator
-
+			if !cfg.quiet {
+				fmt.Print(".") // progress indicator
+			}
 			if record := getRecord(e, cfg, log); record != nil {
 				if err := writer.Write(record); err != nil {
 					return fmt.Errorf("failed to write record: %v", err)
