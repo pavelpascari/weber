@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -224,16 +223,6 @@ var (
 		"method": func(e evt) string {
 			return e.Request.Method
 		},
-		"Content-Type": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Content-Type")
-		},
-		"Cache-Control": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Cache-Control")
-		},
-		"Content-Length": func(e evt) string {
-			return getHeaderValue(e.Response.Headers, "Content-Length")
-		},
-
 		"status": func(e evt) string {
 			return strconv.FormatInt(e.Response.Status, 10)
 		},
@@ -246,13 +235,5 @@ func getColValue(e evt, col string) string {
 		return res
 	}
 
-	return "---"
-}
-
-func mergedSupportedCols() string {
-	cols := []string{}
-	for k := range supportedGetters {
-		cols = append(cols, k)
-	}
-	return strings.Join(cols, ", ")
+	return getHeaderValue(e.Response.Headers, http.CanonicalHeaderKey(col))
 }

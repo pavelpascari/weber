@@ -35,10 +35,11 @@ Options:
   -X <method>   Comma-separated list of HTTP methods to watch for (GET, POST, OPTIONS, PUT, DELETE). Default behavior is to consider all methods.
   -H <string>   Comma-separated list of hostname or IP address to watch for. Default behavior is to consider all hosts.
   -o <file>     Write the response to a file. CSV is the default and only supported format.
-  -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". Available columns are:
-                    %s
+  -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". 
+				Available columns are any valid response header, plus: url, method, status.
   -v            Enable verbose logging to observe all browser events.
   -q            Disable all logging.
+  -h            Show this help message.
 
 Examples:
       # Watch for all requests to https://example.com
@@ -75,7 +76,7 @@ type config struct {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, mergedSupportedCols())
+		fmt.Fprintf(os.Stderr, usage)
 	}
 
 	cfg, err := flagsToConfig()
