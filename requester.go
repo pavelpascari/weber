@@ -133,11 +133,12 @@ func WatchNetworkFor(ctx context.Context, url string, cfg config, log logF) erro
 
 	var dst io.Writer
 	if cfg.outputPath != "" {
-		dst, err := os.OpenFile(cfg.outputPath, os.O_CREATE|os.O_WRONLY, 0644)
+		outFile, err := os.OpenFile(cfg.outputPath, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open file: %v", err)
 		}
-		defer dst.Close()
+		defer outFile.Close()
+		dst = outFile
 	} else {
 		dst = os.Stdout
 	}
