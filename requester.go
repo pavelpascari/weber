@@ -237,6 +237,14 @@ var (
 		"status": func(e evt) string {
 			return strconv.FormatInt(e.Response.Status, 10)
 		},
+		"hostname": func(e evt) string {
+			u, err := url.Parse(e.Request.URL)
+			if err != nil {
+				return ""
+			}
+
+			return u.Hostname()
+		},
 	}
 )
 

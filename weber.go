@@ -16,6 +16,7 @@ var (
 	h = flag.String("H", "", "")
 	o = flag.String("o", "", "")
 	c = flag.String("c", "", "")
+	t = flag.Int("t", 15, "")
 	v = flag.Bool("v", false, "")
 	q = flag.Bool("q", false, "")
 
@@ -37,7 +38,9 @@ Options:
   -H <string>   Comma-separated list of hostname or IP address to watch for. Default behavior is to consider all hosts.
   -o <file>     Write the response to a file. CSV is the default and only supported format.
   -c <string>   Comma-separated list of columns to write to the output file. Default is "url,method,status". 
-				Available columns are any valid response header, plus: url, method, status.
+				Available columns are any valid response header, plus: url, method, status, hostname.
+  -t <int>      Time after which the program will give up waiting for another request. 
+				Every new processed request will restart the timer. Default is 15 seconds.
   -v            Enable verbose logging to observe all browser events.
   -q            Disable all logging.
   -h            Show this help message.
@@ -51,6 +54,9 @@ Examples:
 
       # Watch for GET requests on example.org and output the URL, request method, the status code, and cache-control header
       weber -X GET -H example.org -o output.csv -c "url,method,status,Cache-Control" https://example.com
+
+      # Get all URLs that for resources of a website
+      weber -o output.csv -c hostname https://example.com
 `
 
 type config struct {
@@ -88,9 +94,6 @@ func main() {
 	log := logger(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ctx, cancel = context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
 	c := make(chan os.Signal, 1)
@@ -152,7 +155,7 @@ func flagsToConfig() (config, error) {
 
 	cfg := config{
 		url:         url,
-		giveUpAfter: 5 * time.Second,
+		giveUpAfter: time.Duration(*t) * time.Second,
 		outputPath:  *o,
 		outputCols:  []string{"url", "method", "status"},
 	}
